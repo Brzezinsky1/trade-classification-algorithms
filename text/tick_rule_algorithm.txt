@@ -1,0 +1,5 @@
+Tick Test: When a trade occurs exactly at the midpoint, the Quote Rule is indeterminate. 
+In this case, the Tick Test is applied. 
+It compares the current trade price to the price of the previous trade (Pt−1​). 
+If the current price is higher (an uptick), the trade is classified as a buy. 
+If it is lower (a downtick), it is a sell. If the price is unchanged, the classification carries over from the previous trade.

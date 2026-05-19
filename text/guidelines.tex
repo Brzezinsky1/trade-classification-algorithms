@@ -1,0 +1,62 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{enumitem}
+\usepackage{hyperref}
+
+\setlist[itemize]{topsep=4pt,itemsep=3pt}
+\setlist[enumerate]{topsep=4pt,itemsep=3pt}
+
+\title{Final Project --- Submission Guidelines}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+
+\section*{What I want from you}
+
+\begin{enumerate}
+    \item \textbf{Code} --- a working Python script or notebook implementing your method.
+    \item \textbf{Presentation} --- a short write-up / slide deck covering motivation, method, validation results, and what did not work. Cross-validation is required wherever it applies; numbers without out-of-sample evaluation are not evidence.
+\end{enumerate}
+
+Deadline: both the code and the presentation must be sent to me via email at least 48 hours before your presentation datetime.
+
+\section*{Project 2}
+
+\begin{itemize}
+
+    \item \textbf{Trade-side classification.} Given trade prices and volumes, with no quotes, infer the aggressor side of each print. Beat or motivate beyond Lee--Ready / tick rule / quote rule baselines.
+
+\end{itemize}
+
+\section*{Code interface for the structured projects}
+
+For Project 2, wrap your method as a single class or function with a clean signature. I should be able to import it and run it on my own data.
+
+\subsection*{Project 2}
+
+\begin{verbatim}
+def classify_side(
+    trades: pd.DataFrame
+) -> pd.Series:
+\end{verbatim}
+
+Input is a pandas DataFrame with trade price and volume columns, time-indexed. Output is a boolean pandas Series aligned to the input where \texttt{True} means sell aggressor and \texttt{False} means buy aggressor, matching the convention of the sample data.
+
+\section*{Sample data}
+
+Exemplary crypto trades and order-book data is attached for you to develop and validate against. Conventions:
+
+\begin{itemize}
+    \item Trades: the aggressor-side flag is boolean --- \texttt{True} means sell aggressor, \texttt{False} means buy aggressor.
+    \item Order books: standard L2 snapshots, with bids and asks including prices and sizes.
+\end{itemize}
+
+
+\end{document}

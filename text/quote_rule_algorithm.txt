@@ -1,0 +1,4 @@
+This rule compares the trade price (Pt​) to the midpoint of the prevailing bid-ask spread (Mt​). 
+If a trade occurs at a price above the midpoint, it is classified as a buy. 
+If it occurs below the midpoint, it is classified as a sell.
+
