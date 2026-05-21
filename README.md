@@ -81,7 +81,7 @@ Training/validation/test split:
 
 We additionally simulate "professor's data" by training on one symbol and testing on the other to check cross-symbol generalisation.
 
-## 5. Repo structure (target)
+## 5. Repo structure (reference)
 
 ```
 ATS-Final-Project/
@@ -116,6 +116,7 @@ ATS-Final-Project/
 
 **Owns the foundation everyone else builds on.**
 
+**DONE**
 - Build [src/data.py](src/data.py): loaders for trades and order books, the train/val/test split, and a function that reconstructs the **quote-rule / Lee–Ready labels** from the order book (this is the oracle Member B & C train against where useful).
 - Implement all baselines in [src/baselines.py](src/baselines.py):
   - Tick rule, Quote rule, Lee–Ready.
@@ -126,13 +127,19 @@ ATS-Final-Project/
   - inter-trade gap (busy vs quiet),
   - symbol.
   Breakdowns are how we *justify* a model that wins on one regime but ties on another.
-- [notebooks/01_eda.ipynb](notebooks/01_eda.ipynb) + [notebooks/02_baselines.ipynb](notebooks/02_baselines.ipynb): exploratory plots and baseline numbers everyone refers back to.
+[notebooks/02_baselines.ipynb](notebooks/02_baselines.ipynb): exploratory plots and baseline numbers everyone refers back to.
+
+**TO BE DONE**
+
+- [notebooks/01_eda.ipynb](notebooks/01_eda.ipynb)
 - Owns the "Baselines & Evaluation" section of the final report.
 - Builds Decision Tree model 
 
 ### Benek — *Feature Engineering & Classical ML*
 
 **Builds the per-trade feature set and the first strong learned model.**
+
+**DONE**
 
 - [src/features.py](src/features.py): everything you can extract from `(price, amount, time)`. Suggested features:
   - tick direction (+ multi-lag versions),
@@ -142,41 +149,28 @@ ATS-Final-Project/
   - run-length / streak features (how many consecutive same-direction ticks?),
   - price-proximity to recent local high / low,
   - "round number" / tick-size features (where it makes sense).
-- Train a gradient-boosting classifier in [src/models/gbm.py](src/models/gbm.py) (LightGBM is a good default — handles missing values, fast, robust). Hyper-parameter tune on validation only.
 - Feature-importance analysis and ablations (which features actually carry signal? — drop the rest).
-- [notebooks/03_features_and_gbm.ipynb](notebooks/03_features_and_gbm.ipynb).
+- [notebooks/03_features.ipynb](notebooks/03_features.ipynb).
+
+**TO BE DONE**
+- Train a gradient-boosting classifier in [src/models/gbm.py](src/models/gbm.py) (LightGBM was used as quick reference in features.ipynb). Hyper-parameter tune on validation only.
+- [notebooks/04_gbm.ipynb](notebooks/04_gbm.ipynb).
 - Owns the "Features & GBM" section of the final report.
 
 ### Krzysiek — *Sequence Model, Ensemble & API*
 
 **Captures temporal structure and ships the deliverable.**
 
+**DONE** 
 - [src/models/sequence.py](src/models/sequence.py): a sequence-aware model — LSTM over windows of recent trades, using Member B's features as inputs.
-- [src/models/ensemble.py](src/models/ensemble.py): stack Member B's GBM and the sequence model (e.g. logistic regression on out-of-fold probabilities), calibrate, and pick the operating threshold against Member A's evaluation harness.
 - [src/classify_side.py](src/classify_side.py): the **single public function**. Loads artifacts from `artifacts/`, computes features, calls the ensemble, returns the boolean `Series`. This is what the professor imports — must be bullet-proof:
   - Handle DataFrames with or without an extra `side` column.
   - Handle a single-symbol input even though we trained on two.
   - Sensible behaviour on edge cases (first trade, ties, NaNs).
 - [tests/test_classify_side.py](tests/test_classify_side.py): contract tests — output is a `pd.Series`, dtype is `bool`, length matches input, index matches input, runs on a small fixture.
-- [notebooks/04_sequence_and_ensemble.ipynb](notebooks/04_sequence_and_ensemble.ipynb).
+- [notebooks/05_sequence.ipynb](notebooks/05_sequence.ipynb).
+
+**TO BE DONE**
+- [src/models/ensemble.py](src/models/ensemble.py): stack Benek's GBM and the sequence model (e.g. logistic regression on out-of-fold probabilities), calibrate, and pick the operating threshold against Member A's evaluation harness.
+- [notebooks/06_ensemble.ipynb](notebooks/06_ensemble.ipynb).
 - Owns the "Sequence Model, Ensemble & API" section of the final report.
-
-## 7. Milestones (suggested)
-
-| Week | Goal                                                                                    | Owner(s)        |
-|------|------------------------------------------------------------------------------------------|-----------------|
-| 1    | Data loaders, train/val/test split, baselines running end-to-end, evaluation harness     | Michał          |
-| 2    | Full feature set + first GBM with validation numbers beating tick rule                   | Benek           |
-| 3    | Sequence model trained, first ensemble                                                   | Krzysiek        |
-| 4    | Cross-symbol generalisation check, error analysis, hyper-parameter polish                | All             |
-| 5    | Final `classify_side` wrapper, tests, report, presentation                               | All             |
-
-## 8. Setup
-
-```bash
-python -m venv .venv
-.venv\Scripts\activate          # PowerShell
-pip install -r requirements.txt
-```
-
-(`requirements.txt` to be added in week 1: `pandas`, `numpy`, `pyarrow`, `scikit-learn`, `lightgbm`, `matplotlib`, `torch`)

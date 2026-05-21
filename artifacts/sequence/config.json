@@ -1,0 +1,30 @@
+{
+  "features": [
+    "tick_ff",
+    "tick_1",
+    "tick_2",
+    "tick_3",
+    "ret_1",
+    "ret_3",
+    "ret_10",
+    "dt_s",
+    "log_dt_s",
+    "vol_z_10",
+    "vol_z_50",
+    "log_amount",
+    "run_length",
+    "run_dir",
+    "pct_range_20",
+    "pct_range_50"
+  ],
+  "window": 32,
+  "hidden_size": 64,
+  "num_layers": 2,
+  "dropout": 0.2,
+  "lr": 0.001,
+  "weight_decay": 1e-05,
+  "batch_size": 512,
+  "epochs": 25,
+  "patience": 5,
+  "seed": 42
+}
