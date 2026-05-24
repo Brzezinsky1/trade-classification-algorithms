@@ -5,17 +5,6 @@ Aggressor sides are autocorrelated — a market order often sweeps several resti
 orders, producing runs of same-side prints — so a model that sees the recent
 *sequence* of trades should beat a per-trade independent classifier.
 
-Design choices
---------------
-- **Causal**: each prediction at trade t uses only trades [t-W+1 .. t] (a backward
-  window). No look-ahead, so the model is valid even for real-time use and does not
-  leak future information into the label.
-- **Feature inputs**: the trade-only features from ``src.features`` (Benek's work).
-  Price-*level* features (frac_price, round_prox, log_price) are excluded because
-  they are tied to a symbol's absolute price and hurt cross-symbol transfer.
-- **Pooled training**: trained on both symbols so the small-data symbol (WIFUSDT)
-  borrows strength from the large one (ZAMAUSDT).
-
 Artifacts (written to ``artifacts/sequence/``)
 - ``model.pt``     — model weights (state_dict)
 - ``scaler.npz``   — per-feature mean/scale for standardisation
@@ -173,32 +162,19 @@ def _build_pooled_dataset(
     return mats, labels, mean, scale
 
 
-def train_sequence_model(
+def _fit(
     train_groups: list,
     val_groups: list,
-    config: SequenceConfig | None = None,
-    artifact_dir: Path = ARTIFACT_DIR,
+    config: SequenceConfig,
     verbose: bool = True,
-) -> dict:
+) -> tuple:
     """
-    Train the LSTM on pooled trade groups and save artifacts.
-
-    Parameters
-    ----------
-    train_groups, val_groups : list[pd.DataFrame]
-        Each DataFrame is one symbol-day of trades with a 'side' column.
-        Windows are built *within* each group (no cross-group leakage).
-    config : SequenceConfig
-    artifact_dir : Path
-        Where to write model.pt, scaler.npz, config.json.
-
-    Returns
-    -------
-    dict  training history + final val metrics.
+    Core training loop — fit the LSTM and return ``(model, mean, scale, history)``
+    *without* saving artifacts. Shared by ``train_sequence_model`` (which saves) and
+    ``cross_val_report`` (which does not, to avoid clobbering the production model).
     """
     from torch.utils.data import ConcatDataset
 
-    config = config or SequenceConfig()
     torch.manual_seed(config.seed)
     np.random.seed(config.seed)
 
@@ -272,10 +248,84 @@ def train_sequence_model(
     if best_state is not None:
         model.load_state_dict(best_state)
 
-    _save_artifacts(model, mean, scale, config, artifact_dir)
     history["best_val_loss"] = best_val
-    history["final_val_acc"] = history["val_acc"][-1]
+    history["final_val_acc"] = history["val_acc"][-1] if history["val_acc"] else float("nan")
+    return model, mean, scale, history
+
+
+def train_sequence_model(
+    train_groups: list,
+    val_groups: list,
+    config: SequenceConfig | None = None,
+    artifact_dir: Path = ARTIFACT_DIR,
+    verbose: bool = True,
+) -> dict:
+    """
+    Train the LSTM on pooled trade groups and **save** artifacts to ``artifact_dir``.
+
+    Parameters
+    ----------
+    train_groups, val_groups : list[pd.DataFrame]
+        Each DataFrame is one symbol-day of trades with a 'side' column.
+        Windows are built *within* each group (no cross-group leakage).
+
+    Returns
+    -------
+    dict  training history + final val metrics.
+    """
+    config = config or SequenceConfig()
+    model, mean, scale, history = _fit(train_groups, val_groups, config, verbose=verbose)
+    _save_artifacts(model, mean, scale, config, artifact_dir)
     return history
+
+
+def cross_val_report(
+    symbol_frames: dict,
+    config: SequenceConfig | None = None,
+    val_fraction: float = 0.15,
+    verbose: bool = True,
+) -> dict:
+    """
+    Leave-one-symbol-out CV — an honest out-of-sample estimate of LSTM generalisation
+    to an unseen instrument (the professor's scenario).
+
+    For each held-out symbol, the model is trained on the *other* symbol(s); a
+    time-tail (`val_fraction`) of each training symbol is reserved for early stopping.
+    No production artifacts are written.
+
+    Parameters
+    ----------
+    symbol_frames : dict[str, pd.DataFrame]
+        {symbol: trades_df} — typically the train+val days pooled per symbol.
+
+    Returns
+    -------
+    dict[str, dict]  {held_out_symbol: metrics}
+    """
+    from ..cv import leave_one_symbol_out
+    from ..evaluate import metrics
+
+    config = config or SequenceConfig()
+    results = {}
+
+    for test_sym, train_frames, test_df in leave_one_symbol_out(symbol_frames):
+        # carve a time-ordered tail of each training symbol for early stopping
+        tr_groups, va_groups = [], []
+        for df in train_frames:
+            cut = max(config.window + 1, int(len(df) * (1 - val_fraction)))
+            tr_groups.append(df.iloc[:cut])
+            va_groups.append(df.iloc[cut:])
+
+        model, mean, scale, _ = _fit(tr_groups, va_groups, config, verbose=False)
+        bundle = {"model": model, "mean": mean, "scale": scale, "config": config}
+        proba = predict_proba(bundle, test_df)
+        m = metrics(test_df["side"].astype(bool), proba >= 0.5)
+        results[test_sym] = m
+        if verbose:
+            print(f"[LSTM CV] hold-out {test_sym:10s}  "
+                  f"acc={m['accuracy']:.4f}  macro_f1={m['macro_f1']:.4f}")
+
+    return results
 
 
 # ── Artifact I/O ──────────────────────────────────────────────────────────────
