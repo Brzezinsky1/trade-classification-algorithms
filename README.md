@@ -72,7 +72,6 @@ Three complementary angles:
 
 1. **Better features from trades only** — micro-momentum, run-length, time-deltas, volume signatures, log-returns at multiple horizons, round-number price proximity, trade-clustering / burstiness.
 2. **A model that learns serial dependence** — aggressor sides are auto-correlated (a market order often eats multiple resting orders, producing runs of same-side prints). A sequence model (HMM / CRF / small LSTM or 1D-CNN) should beat per-trade independent classifiers.
-3. **Ensembling** — stack the sequence model on top of a gradient-boosting model and the rule baselines, calibrate, and pick a threshold on validation.
 
 Training/validation/test split:
 - **Train**: 2026-04-12 (both symbols)
@@ -102,77 +101,10 @@ ATS-Final-Project/
 │   ├── 01_eda.ipynb
 │   ├── 02_baselines.ipynb
 │   ├── 03_features_and_gbm.ipynb
-│   └── 04_sequence_and_ensemble.ipynb
+│   └── 04_sequence.ipynb
 ├── artifacts/                      # trained model files (loaded by classify_side)
 ├── tests/
 │   └── test_classify_side.py       # contract / sanity tests
 └── report/
     └── report.pdf
 ```
-
-## 6. Work split
-
-### Michał — *Data, Baselines, Evaluation*
-
-**Owns the foundation everyone else builds on.**
-
-- Build [src/data.py](src/data.py): loaders for trades and order books, the train/val/test split, and a function that reconstructs the **quote-rule / Lee–Ready labels** from the order book (this is the oracle Member B & C train against where useful).
-- Implement all baselines in [src/baselines.py](src/baselines.py):
-  - Tick rule, Quote rule, Lee–Ready.
-  - Each baseline = a `classify_side`-compatible function so we can plug them into the same evaluation harness.
-- Build [src/evaluate.py](src/evaluate.py): accuracy, F1, balanced accuracy, confusion matrix, plus **breakdowns** by:
-  - trade size bucket (small / medium / block),
-  - time-of-day,
-  - inter-trade gap (busy vs quiet),
-  - symbol.
-  Breakdowns are how we *justify* a model that wins on one regime but ties on another.
-[notebooks/02_baselines.ipynb](notebooks/02_baselines.ipynb): exploratory plots and baseline numbers everyone refers back to.
-- [notebooks/01_eda.ipynb](notebooks/01_eda.ipynb)
-- Owns the "Baselines & Evaluation" section of the final report.
-- Builds Decision Tree model 
-
-### Benek — *Feature Engineering & XGBoost Model*
-
-**Builds the feature-engineering pipeline and the main classical ML classifier.**
-
-- Implemented [src/features.py](src/features.py): a full trade-only feature engineering pipeline using strict no-look-ahead logic.
-- Engineered features capturing:
-  - tick direction and multi-lag ticks,
-  - short-term log returns,
-  - inter-trade timing,
-  - rolling volume z-scores,
-  - streak persistence and run direction,
-  - local-range positioning,
-  - round-number proximity effects.
-- Trained an XGBoost classifier in [src/models/gbm.py](src/models/gbm.py) using only `(price, amount, timestamp)` information.
-- Built the full training / validation pipeline with chronological out-of-sample evaluation:
-  - Train: 2026-04-12
-  - Validation: 2026-04-13
-  - Hold-out Test: 2026-04-14
-- Performed feature-importance analysis and model interpretation.
-- Added notebook experiments and model comparison in [notebooks/03_features_and_gbm.ipynb](notebooks/03_features_and_gbm.ipynb).
-
-**Key findings**
-- The Tick Rule remained an extremely strong trades-only baseline.
-- XGBoost achieved comparable out-of-sample performance while learning nonlinear trade-flow dynamics.
-- Feature-importance analysis showed that:
-  - `run_dir` (current order-flow direction),
-  - `tick_ff` (forward-filled tick direction),
-  
-  were the dominant predictive signals.
-- Results suggest strong order-flow persistence and short-term aggressor autocorrelation in crypto trade flow.
-
-### Krzysiek — *Sequence Model, Ensemble & API*
-
-**Captures temporal structure and ships the deliverable.**
-
-- [src/models/sequence.py](src/models/sequence.py): a sequence-aware model — LSTM over windows of recent trades, using Member B's features as inputs.
-- [src/classify_side.py](src/classify_side.py): the **single public function**. Loads artifacts from `artifacts/`, computes features, calls the ensemble, returns the boolean `Series`. This is what the professor imports — must be bullet-proof:
-  - Handle DataFrames with or without an extra `side` column.
-  - Handle a single-symbol input even though we trained on two.
-  - Sensible behaviour on edge cases (first trade, ties, NaNs).
-- [tests/test_classify_side.py](tests/test_classify_side.py): contract tests — output is a `pd.Series`, dtype is `bool`, length matches input, index matches input, runs on a small fixture.
-- [notebooks/05_sequence.ipynb](notebooks/05_sequence.ipynb).
-- [src/models/ensemble.py](src/models/ensemble.py): stack Benek's GBM and the sequence model (e.g. logistic regression on out-of-fold probabilities), calibrate, and pick the operating threshold against Member A's evaluation harness.
-- [notebooks/06_ensemble.ipynb](notebooks/06_ensemble.ipynb).
-- Owns the "Sequence Model, Ensemble & API" section of the final report.
