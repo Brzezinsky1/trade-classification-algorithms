@@ -58,6 +58,7 @@ def build_features(trades: pd.DataFrame) -> pd.DataFrame:
     # forward-filled tick: no zeros, useful as a standalone feature
     tick_ff = _filled_tick(price)
     feats["tick_ff"] = tick_ff
+    feats["tick_rule_side"] = (tick_ff < 0).astype(int)
 
     # ── log-returns at multiple horizons ──────────────────────────────────────
     for n in [1, 3, 5, 10]:
@@ -118,4 +119,6 @@ FEATURE_NAMES: list = [
     "pct_range_20", "pct_range_50",
     # round-number proximity
     "frac_price", "round_prox", "log_price",
+
+    "tick_rule_side",
 ]

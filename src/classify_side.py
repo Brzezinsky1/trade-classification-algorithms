@@ -26,7 +26,7 @@ import numpy as np
 import pandas as pd
 
 from .baselines import tick_rule
-from .models import sequence as seq
+from .models import gbm
 
 # module-level cache so repeated calls don't reload the model from disk
 _BUNDLE = None
@@ -36,21 +36,23 @@ THRESHOLD = 0.5  # sell-aggressor probability cutoff
 
 
 def _get_bundle():
-    """Load (and cache) the trained sequence bundle, or return None if unavailable."""
+    """Load and cache the trained XGBoost bundle, or return None if unavailable."""
     global _BUNDLE, _LOAD_FAILED
     if _BUNDLE is not None:
         return _BUNDLE
     if _LOAD_FAILED:
         return None
     try:
-        if not seq.artifacts_exist():
+        if not gbm.artifacts_exist():
             _LOAD_FAILED = True
             return None
-        _BUNDLE = seq.load_artifacts()
+        _BUNDLE = gbm.load_artifacts()
         return _BUNDLE
-    except Exception as exc:  # pragma: no cover - defensive
-        warnings.warn(f"classify_side: could not load model artifacts ({exc}); "
-                      "falling back to tick rule.")
+    except Exception as exc:
+        warnings.warn(
+            f"classify_side: could not load XGBoost artifacts ({exc}); "
+            "falling back to tick rule."
+        )
         _LOAD_FAILED = True
         return None
 
@@ -91,7 +93,7 @@ def classify_side(trades: pd.DataFrame) -> pd.Series:
         return tick_rule(trades).astype(bool).rename("predicted_side")
 
     try:
-        proba = seq.predict_proba(bundle, trades)
+        proba = gbm.predict_proba(bundle, trades)
         pred = (proba >= THRESHOLD)
         # guard against any NaN probabilities (shouldn't happen) → tick fallback
         if pred.isna().any():
