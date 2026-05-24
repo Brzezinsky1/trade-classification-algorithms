@@ -5,10 +5,6 @@ Convention (matches the project-wide contract):
   True  = sell aggressor
   False = buy aggressor
 
-Tick rule is trades-only and is a *fair* baseline under the professor's
-evaluation constraint.  Quote rule and Lee-Ready require the order book
-and serve as oracle upper-bound references during development.
-
 All functions return a fully boolean pd.Series with no NaN — any
 indeterminate cases are resolved by a tick-rule fallback so the output is
 always aligned 1-to-1 with the input trades.
