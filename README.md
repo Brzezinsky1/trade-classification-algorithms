@@ -116,7 +116,6 @@ ATS-Final-Project/
 
 **Owns the foundation everyone else builds on.**
 
-**DONE**
 - Build [src/data.py](src/data.py): loaders for trades and order books, the train/val/test split, and a function that reconstructs the **quote-rule / Lee–Ready labels** from the order book (this is the oracle Member B & C train against where useful).
 - Implement all baselines in [src/baselines.py](src/baselines.py):
   - Tick rule, Quote rule, Lee–Ready.
@@ -128,9 +127,6 @@ ATS-Final-Project/
   - symbol.
   Breakdowns are how we *justify* a model that wins on one regime but ties on another.
 [notebooks/02_baselines.ipynb](notebooks/02_baselines.ipynb): exploratory plots and baseline numbers everyone refers back to.
-
-**TO BE DONE**
-
 - [notebooks/01_eda.ipynb](notebooks/01_eda.ipynb)
 - Owns the "Baselines & Evaluation" section of the final report.
 - Builds Decision Tree model 
@@ -139,7 +135,6 @@ ATS-Final-Project/
 
 **Builds the feature-engineering pipeline and the main classical ML classifier.**
 
-**DONE**
 - Implemented [src/features.py](src/features.py): a full trade-only feature engineering pipeline using strict no-look-ahead logic.
 - Engineered features capturing:
   - tick direction and multi-lag ticks,
@@ -171,7 +166,6 @@ ATS-Final-Project/
 
 **Captures temporal structure and ships the deliverable.**
 
-**DONE** 
 - [src/models/sequence.py](src/models/sequence.py): a sequence-aware model — LSTM over windows of recent trades, using Member B's features as inputs.
 - [src/classify_side.py](src/classify_side.py): the **single public function**. Loads artifacts from `artifacts/`, computes features, calls the ensemble, returns the boolean `Series`. This is what the professor imports — must be bullet-proof:
   - Handle DataFrames with or without an extra `side` column.
@@ -179,8 +173,6 @@ ATS-Final-Project/
   - Sensible behaviour on edge cases (first trade, ties, NaNs).
 - [tests/test_classify_side.py](tests/test_classify_side.py): contract tests — output is a `pd.Series`, dtype is `bool`, length matches input, index matches input, runs on a small fixture.
 - [notebooks/05_sequence.ipynb](notebooks/05_sequence.ipynb).
-
-**TO BE DONE**
 - [src/models/ensemble.py](src/models/ensemble.py): stack Benek's GBM and the sequence model (e.g. logistic regression on out-of-fold probabilities), calibrate, and pick the operating threshold against Member A's evaluation harness.
 - [notebooks/06_ensemble.ipynb](notebooks/06_ensemble.ipynb).
 - Owns the "Sequence Model, Ensemble & API" section of the final report.
