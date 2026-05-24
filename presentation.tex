@@ -582,6 +582,143 @@
 \end{frame}
 
 % ─────────────────────────────────────────────────────────────
+\section{Team Models}
+
+\begin{frame}{Gradient Boosting Model — Benek Kurtyka}
+  \begin{columns}[T]
+    \column{0.50\textwidth}
+    \textbf{Approach}
+    \begin{itemize}
+      \item XGBoost / LightGBM classifier
+      \item Same 24 trade-only features as the DT
+      \item Hyperparameter tuning on validation split
+    \end{itemize}
+
+    \medskip
+    \textbf{Results — Test Set (Apr 14)}
+    \begin{center}
+    \begin{tabular}{lc}
+      \toprule
+      Metric & Value \\
+      \midrule
+      Accuracy & \\[4pt]
+      Balanced Acc. & \\[4pt]
+      Macro F1 & \\[4pt]
+      Errors (FP+FN) & \\
+      \bottomrule
+    \end{tabular}
+    \end{center}
+
+    \column{0.46\textwidth}
+    \textbf{Confusion Matrix — Test Set}
+
+    \bigskip
+    \begin{center}
+    \begin{tabular}{lrr}
+      \toprule
+       & pred Buy & pred Sell \\
+      \midrule
+      true Buy  & & \\[6pt]
+      true Sell & & \\
+      \bottomrule
+    \end{tabular}
+    \end{center}
+
+    \bigskip
+    \textbf{Key feature importances}
+    \begin{center}
+    \begin{tabular}{lr}
+      \toprule
+      Feature & Importance \\
+      \midrule
+      & \\[4pt]
+      & \\[4pt]
+      & \\
+      \bottomrule
+    \end{tabular}
+    \end{center}
+  \end{columns}
+\end{frame}
+
+% ─────────────────────────────────────────────────────────────
+\begin{frame}{Sequence Model (LSTM) — Krzysztof Nalazek}
+  \begin{columns}[T]
+    \column{0.50\textwidth}
+    \textbf{Approach}
+    \begin{itemize}
+      \item Causal LSTM over a window of recent trades
+      \item Window size: 32 trades
+      \item Input: 16 trade-only features (no absolute-price features)
+      \item Trained on both symbols (pooled)
+    \end{itemize}
+
+    \medskip
+    \textbf{Results — Test Set (Apr 14)}
+    \begin{center}
+    \begin{tabular}{lc}
+      \toprule
+      Metric & Value \\
+      \midrule
+      Accuracy & \\[4pt]
+      Balanced Acc. & \\[4pt]
+      Macro F1 & \\[4pt]
+      Errors (FP+FN) & \\
+      \bottomrule
+    \end{tabular}
+    \end{center}
+
+    \column{0.46\textwidth}
+    \textbf{Confusion Matrix — Test Set}
+
+    \bigskip
+    \begin{center}
+    \begin{tabular}{lrr}
+      \toprule
+       & pred Buy & pred Sell \\
+      \midrule
+      true Buy  & & \\[6pt]
+      true Sell & & \\
+      \bottomrule
+    \end{tabular}
+    \end{center}
+
+    \bigskip
+    \begin{block}{Architecture}
+      \begin{itemize}
+        \item 2-layer LSTM, hidden size 64
+        \item MLP head: 64 → 32 → 1
+        \item Early stopping (patience = 5)
+      \end{itemize}
+    \end{block}
+  \end{columns}
+\end{frame}
+
+% ─────────────────────────────────────────────────────────────
+\begin{frame}{Full Model Comparison — Test Set (Apr 14)}
+  \begin{center}
+  \begin{tabular}{lcccc}
+    \toprule
+    \textbf{Model} & \textbf{Accuracy} & \textbf{Bal.\ Acc.} & \textbf{Macro F1} & \textbf{Errors} \\
+    \midrule
+    \rowcolor{winrow}
+    \textbf{Decision Tree (CV)} & \textbf{0.9220} & \textbf{0.9220} & \textbf{0.9220} & \textbf{47{,}393} \\
+    GBM (XGBoost) & & & & \\[4pt]
+    LSTM (Sequence) & & & & \\[4pt]
+    Quote Rule & 0.9164 & 0.9163 & 0.9163 & 50{,}853 \\
+    Lee-Ready  & 0.9164 & 0.9163 & 0.9163 & 50{,}853 \\
+    Tick Rule  & 0.8727 & 0.8727 & 0.8727 & 77{,}367 \\
+    \bottomrule
+  \end{tabular}
+  \end{center}
+
+  \medskip
+  \begin{block}{Baseline to beat}
+    All three team models target Quote Rule / Lee-Ready as the primary benchmark
+    ($\text{accuracy} = 91.64\%$, $\text{errors} = 50{,}853$).
+  \end{block}
+\end{frame}
+
+% ─────────────────────────────────────────────────────────────
 \section{Conclusion}
 
 \begin{frame}{Summary}
