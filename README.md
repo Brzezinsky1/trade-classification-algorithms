@@ -12,7 +12,7 @@ Our task: build a function that takes a `DataFrame` of trades (price, volume, ti
 
 This matches the `side` column in the sample data.
 
-### Deliverable (the professor's interface)
+### Deliverable
 
 ```python
 def classify_side(trades: pd.DataFrame) -> pd.Series:
@@ -32,11 +32,6 @@ def classify_side(trades: pd.DataFrame) -> pd.Series:
         False = buy aggressor
     """
 ```
-
-The professor will `import` this function and run it on **his own unseen trade data**, so the function must:
-- Work with trades **only** (no order book, no quotes at inference time).
-- Be self-contained — any model artifacts must be loaded inside the package.
-- Run in reasonable time on a day's worth of trades.
 
 ## 2. Data
 
