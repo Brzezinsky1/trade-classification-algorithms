@@ -14,6 +14,8 @@
 \usepackage{tikz}
 \usepackage{amsmath}
 \usepackage{microtype}
+\usepackage{graphicx}
+\graphicspath{{figures/}}
 
 %% ── Colours ─────────────────────────────────────────────────
 \definecolor{okgreen}{RGB}{0,140,60}
@@ -476,6 +478,11 @@
     short-term returns, and volume — these capture edge cases where
     the sign alone is ambiguous.
   \end{columns}
+
+  \medskip
+  \begin{center}
+    \includegraphics[width=0.72\textwidth]{fi_dt.pdf}
+  \end{center}
 \end{frame}
 
 % ─────────────────────────────────────────────────────────────
@@ -515,69 +522,13 @@
 
 % ─────────────────────────────────────────────────────────────
 \begin{frame}{Confusion Matrices — Test Set (Apr 14, both symbols)}
-  \begin{columns}
-    \column{0.25\textwidth}
-    \begin{center}
-    \textbf{Tick Rule}\\[0.4em]
-    {\small
-    \begin{tabular}{lrr}
-      \toprule
-       & pBuy & pSell \\
-      \midrule
-      tBuy  & 272k & 38k \\
-      tSell & 39k  & 259k \\
-      \bottomrule
-    \end{tabular}}
-    \end{center}
-
-    \column{0.25\textwidth}
-    \begin{center}
-    \textbf{Quote Rule}\\[0.4em]
-    {\small
-    \begin{tabular}{lrr}
-      \toprule
-       & pBuy & pSell \\
-      \midrule
-      tBuy  & 286k & 25k \\
-      tSell & 26k  & 271k \\
-      \bottomrule
-    \end{tabular}}
-    \end{center}
-
-    \column{0.25\textwidth}
-    \begin{center}
-    \textbf{Lee-Ready}\\[0.4em]
-    {\small
-    \begin{tabular}{lrr}
-      \toprule
-       & pBuy & pSell \\
-      \midrule
-      tBuy  & 286k & 25k \\
-      tSell & 26k  & 271k \\
-      \bottomrule
-    \end{tabular}}
-    \end{center}
-
-    \column{0.25\textwidth}
-    \begin{center}
-    \textbf{\textcolor{okgreen}{Decision Tree}}\\[0.4em]
-    {\small
-    \begin{tabular}{lrr}
-      \toprule
-       & pBuy & pSell \\
-      \midrule
-      tBuy  & 287k & 24k \\
-      \rowcolor{winrow}
-      tSell & \textbf{24k}  & \textbf{274k} \\
-      \bottomrule
-    \end{tabular}}
-    \end{center}
-  \end{columns}
-
-  \bigskip
   \begin{center}
-  \textbf{Key advantage:} DT reduces missed sell aggressors (FN) from 26{,}069 to 23{,}530
-  — the largest per-class gain over Quote Rule / Lee-Ready.
+    \includegraphics[width=0.92\textwidth]{cm_baselines.pdf}
+  \end{center}
+  \vspace{-0.5em}
+  \begin{center}
+    {\small \textbf{Key advantage:} DT reduces FN from 26{,}069 to 23{,}530
+    — fewest missed sell aggressors of all models.}
   \end{center}
 \end{frame}
 
@@ -644,6 +595,11 @@
     \smallskip
     {\small \textcolor{badred}{Trades-only model — no midpoint access}}
   \end{columns}
+
+  \medskip
+  \begin{center}
+    \includegraphics[width=0.68\textwidth]{fi_gbm.pdf}
+  \end{center}
 \end{frame}
 
 % ─────────────────────────────────────────────────────────────
@@ -735,6 +691,20 @@
       Their natural reference is \textbf{Tick Rule} (87.3\%).
     \end{block}
   \end{columns}
+\end{frame}
+
+% ─────────────────────────────────────────────────────────────
+\begin{frame}{All Models — Confusion Matrices}
+  \begin{center}
+    \includegraphics[width=\textwidth]{cm_all.pdf}
+  \end{center}
+\end{frame}
+
+% ─────────────────────────────────────────────────────────────
+\begin{frame}{Accuracy Overview — All Models}
+  \begin{center}
+    \includegraphics[width=0.88\textwidth]{accuracy_bar.pdf}
+  \end{center}
 \end{frame}
 
 % ─────────────────────────────────────────────────────────────
