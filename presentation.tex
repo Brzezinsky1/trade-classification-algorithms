@@ -589,9 +589,10 @@
     \column{0.50\textwidth}
     \textbf{Approach}
     \begin{itemize}
-      \item XGBoost / LightGBM classifier
-      \item Same 24 trade-only features as the DT
-      \item Hyperparameter tuning on validation split
+      \item XGBoost classifier, \textbf{trades only} (no order book)
+      \item 24 features: tick direction, returns, volume, streaks
+      \item 150 estimators, \code{max\_depth=3}, \code{lr=0.03}
+      \item Tuned on validation split (Apr 13)
     \end{itemize}
 
     \medskip
@@ -601,42 +602,47 @@
       \toprule
       Metric & Value \\
       \midrule
-      Accuracy & \\[4pt]
-      Balanced Acc. & \\[4pt]
-      Macro F1 & \\[4pt]
-      Errors (FP+FN) & \\
+      Accuracy       & 0.8671 \\
+      Balanced Acc.  & 0.8666 \\
+      Macro F1       & 0.8668 \\
+      Buy F1         & 0.8725 \\
+      Sell F1        & 0.8612 \\
+      Errors (FP+FN) & 80{,}806 \\
       \bottomrule
     \end{tabular}
     \end{center}
 
     \column{0.46\textwidth}
     \textbf{Confusion Matrix — Test Set}
-
-    \bigskip
     \begin{center}
     \begin{tabular}{lrr}
       \toprule
        & pred Buy & pred Sell \\
       \midrule
-      true Buy  & & \\[6pt]
-      true Sell & & \\
+      true Buy  & 276{,}517 & 33{,}902 \\
+      true Sell & 46{,}904  & 250{,}626 \\
       \bottomrule
     \end{tabular}
     \end{center}
 
-    \bigskip
-    \textbf{Key feature importances}
+    \medskip
+    \textbf{Top feature importances}
     \begin{center}
     \begin{tabular}{lr}
       \toprule
       Feature & Importance \\
       \midrule
-      & \\[4pt]
-      & \\[4pt]
-      & \\
+      \code{run\_dir}     & 44.25\,\% \\
+      \code{tick\_ff}     & 31.49\,\% \\
+      \code{pct\_range\_20} & \;3.23\,\% \\
+      \code{log\_dt\_s}   & \;1.93\,\% \\
+      \code{log\_price}   & \;1.73\,\% \\
       \bottomrule
     \end{tabular}
     \end{center}
+
+    \smallskip
+    {\small \textcolor{badred}{Trades-only model — no midpoint access}}
   \end{columns}
 \end{frame}
 
@@ -646,10 +652,10 @@
     \column{0.50\textwidth}
     \textbf{Approach}
     \begin{itemize}
-      \item Causal LSTM over a window of recent trades
-      \item Window size: 32 trades
-      \item Input: 16 trade-only features (no absolute-price features)
-      \item Trained on both symbols (pooled)
+      \item Causal LSTM, \textbf{trades only} (no order book)
+      \item Window: last 32 trades per prediction
+      \item 16 relative features (no absolute-price inputs)
+      \item Pooled training on both symbols
     \end{itemize}
 
     \medskip
@@ -659,103 +665,122 @@
       \toprule
       Metric & Value \\
       \midrule
-      Accuracy & \\[4pt]
-      Balanced Acc. & \\[4pt]
-      Macro F1 & \\[4pt]
-      Errors (FP+FN) & \\
+      Accuracy       & 0.8553 \\
+      Balanced Acc.  & 0.8555 \\
+      Macro F1       & 0.8553 \\
+      Buy F1         & 0.8564 \\
+      Sell F1        & 0.8542 \\
+      Errors (FP+FN) & 87{,}975 \\
       \bottomrule
     \end{tabular}
     \end{center}
 
     \column{0.46\textwidth}
     \textbf{Confusion Matrix — Test Set}
-
-    \bigskip
     \begin{center}
     \begin{tabular}{lrr}
       \toprule
        & pred Buy & pred Sell \\
       \midrule
-      true Buy  & & \\[6pt]
-      true Sell & & \\
+      true Buy  & 262{,}287 & 48{,}132 \\
+      true Sell & 39{,}843  & 257{,}687 \\
       \bottomrule
     \end{tabular}
     \end{center}
 
-    \bigskip
+    \medskip
     \begin{block}{Architecture}
       \begin{itemize}
         \item 2-layer LSTM, hidden size 64
-        \item MLP head: 64 → 32 → 1
-        \item Early stopping (patience = 5)
+        \item MLP head: $64 \to 32 \to 1$ (sigmoid)
+        \item BCEWithLogitsLoss, Adam, patience = 5
       \end{itemize}
     \end{block}
+
+    \smallskip
+    {\small \textcolor{badred}{Trades-only model — no midpoint access}}
   \end{columns}
 \end{frame}
 
 % ─────────────────────────────────────────────────────────────
-\begin{frame}{Full Model Comparison — Test Set (Apr 14)}
+\begin{frame}{Full Model Comparison — Test Set (Apr 14, both symbols)}
   \begin{center}
-  \begin{tabular}{lcccc}
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{llcccc}
     \toprule
-    \textbf{Model} & \textbf{Accuracy} & \textbf{Bal.\ Acc.} & \textbf{Macro F1} & \textbf{Errors} \\
+    \textbf{Model} & \textbf{Features} & \textbf{Accuracy} & \textbf{Bal.\ Acc.} & \textbf{Macro F1} & \textbf{Errors} \\
     \midrule
     \rowcolor{winrow}
-    \textbf{Decision Tree (CV)} & \textbf{0.9220} & \textbf{0.9220} & \textbf{0.9220} & \textbf{47{,}393} \\
-    GBM (XGBoost) & & & & \\[4pt]
-    LSTM (Sequence) & & & & \\[4pt]
-    Quote Rule & 0.9164 & 0.9163 & 0.9163 & 50{,}853 \\
-    Lee-Ready  & 0.9164 & 0.9163 & 0.9163 & 50{,}853 \\
-    Tick Rule  & 0.8727 & 0.8727 & 0.8727 & 77{,}367 \\
+    \textbf{Decision Tree (CV)} & book+trades & \textbf{0.9220} & \textbf{0.9220} & \textbf{0.9220} & \textbf{47{,}393} \\
+    Quote Rule  & book & 0.9164 & 0.9163 & 0.9163 & 50{,}853 \\
+    Lee-Ready   & book & 0.9164 & 0.9163 & 0.9163 & 50{,}853 \\
+    Tick Rule   & trades & 0.8727 & 0.8727 & 0.8727 & 77{,}367 \\
+    GBM (XGBoost) & trades & 0.8671 & 0.8666 & 0.8668 & 80{,}806 \\
+    LSTM (Sequence) & trades & 0.8553 & 0.8555 & 0.8553 & 87{,}975 \\
     \bottomrule
   \end{tabular}
   \end{center}
 
-  \medskip
-  \begin{block}{Baseline to beat}
-    All three team models target Quote Rule / Lee-Ready as the primary benchmark
-    ($\text{accuracy} = 91.64\%$, $\text{errors} = 50{,}853$).
-  \end{block}
+  \smallskip
+  \begin{columns}
+    \column{0.54\textwidth}
+    \begin{alertblock}{Decision Tree beats all 3 baselines}
+      Only model with access to midpoint signal —
+      fair comparison against Quote Rule \& Lee-Ready (also use order book).
+    \end{alertblock}
+
+    \column{0.42\textwidth}
+    \begin{block}{Trades-only models}
+      GBM and LSTM operate without the order book.
+      Their natural reference is \textbf{Tick Rule} (87.3\%).
+    \end{block}
+  \end{columns}
 \end{frame}
 
 % ─────────────────────────────────────────────────────────────
 \section{Conclusion}
 
 \begin{frame}{Summary}
-  \begin{block}{Decision Tree (CV-tuned) beats all 3 classical baselines on the test set}
-    \begin{itemize}
-      \item vs.\ \textbf{Tick Rule}: $+4.94\%$ balanced accuracy, $-29{,}974$ errors
-      \item vs.\ \textbf{Quote Rule} \& \textbf{Lee-Ready}: $+0.57\%$ balanced accuracy, $-3{,}460$ errors
-    \end{itemize}
-  \end{block}
-
-  \medskip
   \begin{columns}[T]
     \column{0.48\textwidth}
-    \textbf{Why it works}
-    \begin{itemize}
-      \item Rediscovers Quote Rule (\code{mid\_sign} = 95\,\% importance)
-      \item Learns optimal decision boundaries and edge-case handling
-      \item \code{class\_weight=balanced} improves minority-class recall
-    \end{itemize}
+    \begin{block}{Decision Tree — beats all 3 baselines}
+      \begin{tabular}{ll}
+        vs.\ Tick Rule:   & $+4.94\%$ acc, $-29{,}974$ err \\
+        vs.\ Quote Rule:  & $+0.57\%$ acc, $-3{,}460$ err \\
+        vs.\ Lee-Ready:   & $+0.57\%$ acc, $-3{,}460$ err \\
+      \end{tabular}\\[0.4em]
+      {\small \textit{Uses midpoint features — fair vs.\ oracle baselines}}
+    \end{block}
+
+    \medskip
+    \begin{block}{GBM \& LSTM — trades-only}
+      \begin{tabular}{ll}
+        GBM:  & 86.71\% acc, 80{,}806 errors \\
+        LSTM: & 85.53\% acc, 87{,}975 errors \\
+      \end{tabular}\\[0.4em]
+      {\small \textit{Reference: Tick Rule = 87.27\% (also trades-only)}}
+    \end{block}
 
     \column{0.48\textwidth}
-    \textbf{Methodology}
+    \textbf{Key findings}
     \begin{itemize}
-      \item \code{TimeSeriesSplit} prevents look-ahead in CV
-      \item \code{Pipeline} prevents imputation leakage
-      \item Test set strictly held out until final evaluation
+      \item DT rediscovers Quote Rule from data \\
+            (\code{mid\_sign} = 95\,\% importance)
+      \item \code{TimeSeriesSplit} CV prevents look-ahead leakage
+      \item \code{Pipeline} prevents imputation leakage per fold
+      \item Without midpoint, learned models roughly match Tick Rule
+    \end{itemize}
+
+    \medskip
+    \textbf{Notebooks}
+    \begin{itemize}\setlength\itemsep{0pt}
+      \item[\small$\bullet$] \code{tick\_rule.ipynb}
+      \item[\small$\bullet$] \code{quote\_rule.ipynb}
+      \item[\small$\bullet$] \code{lee\_ready.ipynb}
+      \item[\small$\bullet$] \code{03\_compare\_models.ipynb}
+      \item[\small$\bullet$] \code{decision\_tree\_vs\_baselines.ipynb}
     \end{itemize}
   \end{columns}
-
-  \medskip
-  \begin{exampleblock}{Notebooks}
-    \code{tick\_rule.ipynb} \quad
-    \code{quote\_rule.ipynb} \quad
-    \code{lee\_ready.ipynb} \quad
-    \code{03\_compare\_models.ipynb} \quad
-    \code{decision\_tree\_vs\_baselines.ipynb}
-  \end{exampleblock}
 \end{frame}
 
 \end{document}
