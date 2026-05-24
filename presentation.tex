@@ -26,7 +26,7 @@
 \author[DreamTeam1]{DreamTeam1 — Michał Brzeziński · Benek Kurtyka · Krzysztof Nalazek}
 \institute{Algorithmic Trading Systems — Final Project}
 \title[Trade-Side Classification]{Trade-Side Classification}
-\subtitle{Decision Tree vs.\ Classical Baselines}
+\subtitle{Project 2: Inferring Aggressor Side from Trade Data}
 \date{May 26, 2026}
 
 \newcommand{\code}[1]{\texttt{\small #1}}
@@ -68,11 +68,14 @@
 
     \column{0.48\textwidth}
     \begin{exampleblock}{Deliverable}
+      \small
       \begin{center}
-        \code{classify\_side(trades)} $\to$ \code{pd.Series[bool]}
+        \texttt{classify\_side(trades)}\\
+        $\to$ \texttt{pd.Series[bool]}
       \end{center}
-      Input: \code{price}, \code{amount}, \code{time} only\\
-      (no order book at inference time)
+      \smallskip
+      Input: price, amount, time only\\
+      {\footnotesize (no order book at inference time)}
     \end{exampleblock}
   \end{columns}
 \end{frame}
@@ -506,70 +509,124 @@
 % ─────────────────────────────────────────────────────────────
 \section{Team Models}
 
-\begin{frame}{GBM — Benek Kurtyka}
-  \begin{columns}[T]
-    \column{0.50\textwidth}
-    \textbf{Approach}
-    \begin{itemize}
-      \item XGBoost classifier, \textbf{trades only}
-      \item 24 features: tick, returns, volume, streaks
-      \item 150 estimators, depth 3, lr = 0.03
-    \end{itemize}
+\begin{frame}{XGBoost Methodology}
 
-    \medskip
-    \textbf{Results — Test Set (Apr 14)}
-    \begin{center}
-    \begin{tabular}{lc}
-      \toprule
-      Metric & Value \\
-      \midrule
-      Accuracy       & 0.8671 \\
-      Balanced Acc.\ & 0.8666 \\
-      Macro F1       & 0.8668 \\
-      Errors         & 80{,}806 \\
-      \bottomrule
-    \end{tabular}
-    \end{center}
-    \smallskip
-    {\small\textcolor{badred}{Trades-only — no midpoint access}}
+\small
 
-    \column{0.46\textwidth}
-    \textbf{Confusion Matrix}
-    \begin{center}
-    \begin{tabular}{lrr}
-      \toprule
-       & pBuy & pSell \\
-      \midrule
-      tBuy  & 277k & 34k \\
-      tSell & 47k  & 251k \\
-      \bottomrule
-    \end{tabular}
-    \end{center}
+\begin{block}{Core idea}
+Instead of relying only on the classical Tick Rule, we trained an XGBoost classifier to learn nonlinear trade-flow dynamics from engineered features.
+\end{block}
 
-    \medskip
-    \textbf{Top feature importances}
-    \begin{center}
-    \small
-    \begin{tabular}{lr}
-      \toprule
-      Feature & Imp. \\
-      \midrule
-      \code{run\_dir}      & 44.25\% \\
-      \code{tick\_ff}      & 31.49\% \\
-      \code{pct\_range\_20}& \;3.23\% \\
-      \code{log\_dt\_s}    & \;1.93\% \\
-      \code{log\_price}    & \;1.73\% \\
-      \bottomrule
-    \end{tabular}
-    \end{center}
-  \end{columns}
+\smallskip
+\textbf{Feature groups used:}
+\begin{itemize}\setlength\itemsep{1pt}
+    \item Tick direction and multi-lag ticks
+    \item Short-term log returns
+    \item Inter-trade timing
+    \item Rolling volume z-scores
+    \item Run-length and streak persistence
+    \item Price position within recent local ranges
+    \item Round-number proximity effects
+\end{itemize}
+
+\smallskip
+\textbf{Validation setup:}
+\begin{itemize}\setlength\itemsep{1pt}
+    \item Train: 2026-04-12 \quad Val: 2026-04-13 \quad Hold-out Test: 2026-04-14
+\end{itemize}
+
+\smallskip
+All features computed with strict no-look-ahead logic to avoid information leakage.
+
 \end{frame}
 
 % ─────────────────────────────────────────────────────────────
-\begin{frame}{GBM — Feature Importances}
-  \begin{center}
-    \includegraphics[height=0.78\textheight,keepaspectratio]{fi_gbm.pdf}
-  \end{center}
+\begin{frame}{XGBoost — Validation Results and Interpretation}
+
+\begin{columns}[T,totalwidth=\textwidth]
+
+\begin{column}{0.36\textwidth}
+
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+
+\begin{table}
+\centering
+\begin{tabular}{lccc}
+\toprule
+Model & Acc. & F1 & Bal. \\
+\midrule
+Tick Rule & 0.724 & 0.722 & 0.722 \\
+XGBoost   & 0.713 & 0.702 & 0.705 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\vspace{0.4cm}
+
+\small
+
+\begin{itemize}
+    \item Tick Rule remained a very strong trades-only baseline.
+    \item XGBoost achieved comparable out-of-sample performance.
+    \item Buy-side F1 was higher, suggesting asymmetry in order-flow predictability.
+\end{itemize}
+
+\end{column}
+
+\begin{column}{0.62\textwidth}
+
+\centering
+
+\includegraphics[width=0.95\textwidth]{fi_gbm.pdf}
+
+\vspace{0.15cm}
+
+\scriptsize
+Feature importance shows that run direction and tick direction dominate, suggesting strong order-flow persistence.
+
+\end{column}
+
+\end{columns}
+
+\end{frame}
+
+% ─────────────────────────────────────────────────────────────
+\begin{frame}{XGBoost — Key Conclusions}
+
+\large
+
+\begin{itemize}
+    \item Aggressor-side classification is strongly driven by order-flow persistence.
+
+    \vspace{0.3cm}
+
+    \item The most important predictive features were:
+    \[
+    \texttt{run\_dir}
+    \quad \text{and} \quad
+    \texttt{tick\_ff}
+    \]
+
+    \vspace{0.3cm}
+
+    \item XGBoost successfully learned nonlinear trade-flow structure using only trades data.
+
+    \vspace{0.3cm}
+
+    \item Chronological out-of-sample validation avoided look-ahead bias and provided realistic performance estimates.
+\end{itemize}
+
+\vspace{0.5cm}
+
+\centering
+\Large
+\textbf{Main finding:}
+
+\vspace{0.2cm}
+
+Aggressor-side prediction is dominated by short-term directional persistence.
+
 \end{frame}
 
 % ─────────────────────────────────────────────────────────────
