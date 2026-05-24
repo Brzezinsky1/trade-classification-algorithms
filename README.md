@@ -135,27 +135,37 @@ ATS-Final-Project/
 - Owns the "Baselines & Evaluation" section of the final report.
 - Builds Decision Tree model 
 
-### Benek — *Feature Engineering & Classical ML*
+### Benek — *Feature Engineering & XGBoost Model*
 
-**Builds the per-trade feature set and the first strong learned model.**
+**Builds the feature-engineering pipeline and the main classical ML classifier.**
 
 **DONE**
+- Implemented [src/features.py](src/features.py): a full trade-only feature engineering pipeline using strict no-look-ahead logic.
+- Engineered features capturing:
+  - tick direction and multi-lag ticks,
+  - short-term log returns,
+  - inter-trade timing,
+  - rolling volume z-scores,
+  - streak persistence and run direction,
+  - local-range positioning,
+  - round-number proximity effects.
+- Trained an XGBoost classifier in [src/models/gbm.py](src/models/gbm.py) using only `(price, amount, timestamp)` information.
+- Built the full training / validation pipeline with chronological out-of-sample evaluation:
+  - Train: 2026-04-12
+  - Validation: 2026-04-13
+  - Hold-out Test: 2026-04-14
+- Performed feature-importance analysis and model interpretation.
+- Added notebook experiments and model comparison in [notebooks/03_features_and_gbm.ipynb](notebooks/03_features_and_gbm.ipynb).
 
-- [src/features.py](src/features.py): everything you can extract from `(price, amount, time)`. Suggested features:
-  - tick direction (+ multi-lag versions),
-  - log-returns over 1/3/5/10 trades,
-  - inter-trade time deltas (and log thereof),
-  - rolling volume statistics (zscore of `amount` over windows),
-  - run-length / streak features (how many consecutive same-direction ticks?),
-  - price-proximity to recent local high / low,
-  - "round number" / tick-size features (where it makes sense).
-- Feature-importance analysis and ablations (which features actually carry signal? — drop the rest).
-- [notebooks/03_features.ipynb](notebooks/03_features.ipynb).
-
-**TO BE DONE**
-- Train a gradient-boosting classifier in [src/models/gbm.py](src/models/gbm.py) (LightGBM was used as quick reference in features.ipynb). Hyper-parameter tune on validation only.
-- [notebooks/04_gbm.ipynb](notebooks/04_gbm.ipynb).
-- Owns the "Features & GBM" section of the final report.
+**Key findings**
+- The Tick Rule remained an extremely strong trades-only baseline.
+- XGBoost achieved comparable out-of-sample performance while learning nonlinear trade-flow dynamics.
+- Feature-importance analysis showed that:
+  - `run_dir` (current order-flow direction),
+  - `tick_ff` (forward-filled tick direction),
+  
+  were the dominant predictive signals.
+- Results suggest strong order-flow persistence and short-term aggressor autocorrelation in crypto trade flow.
 
 ### Krzysiek — *Sequence Model, Ensemble & API*
 
