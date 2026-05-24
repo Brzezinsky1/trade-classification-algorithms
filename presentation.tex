@@ -677,24 +677,24 @@
 \begin{frame}{Summary}
   \begin{columns}[T]
     \column{0.50\textwidth}
-    \begin{block}{Decision Tree — beats all 3 baselines}
+    \begin{block}{DT: beats all 3 baselines}
       \small
-      \begin{tabular}{ll}
-        vs.\ Tick Rule:  & $+4.94\%$ acc, $-29{,}974$ err \\
-        vs.\ Quote Rule: & $+0.57\%$ acc, $-3{,}460$ err \\
-        vs.\ Lee-Ready:  & $+0.57\%$ acc, $-3{,}460$ err \\
-      \end{tabular}\\[0.4em]
-      {\footnotesize Uses midpoint features — fair vs.\ oracle baselines}
+      \begin{itemize}\setlength\itemsep{1pt}
+        \item vs.\ Tick Rule: $+4.94\%$ acc, $-29{,}974$ err
+        \item vs.\ Quote Rule: $+0.57\%$ acc, $-3{,}460$ err
+        \item vs.\ Lee-Ready: $+0.57\%$ acc, $-3{,}460$ err
+        \item {\footnotesize Uses midpoint features}
+      \end{itemize}
     \end{block}
 
     \medskip
-    \begin{block}{GBM \& LSTM — trades-only}
+    \begin{block}{GBM \& LSTM (trades-only)}
       \small
-      \begin{tabular}{ll}
-        GBM:  & 86.71\%, 80{,}806 errors \\
-        LSTM: & 85.53\%, 87{,}975 errors \\
-      \end{tabular}\\[0.4em]
-      {\footnotesize Reference: Tick Rule = 87.27\%}
+      \begin{itemize}\setlength\itemsep{1pt}
+        \item GBM: 86.71\%, 80{,}806 errors
+        \item LSTM: 85.53\%, 87{,}975 errors
+        \item {\footnotesize Reference: Tick Rule = 87.27\%}
+      \end{itemize}
     \end{block}
 
     \column{0.46\textwidth}
